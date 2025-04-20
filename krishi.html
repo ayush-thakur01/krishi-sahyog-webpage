@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KRISHI SHAYOG</title>
+    <style>
+        /* Basic styling for the body */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+        }
+
+        /* Styling for the header */
+        header {
+            background-color: #183819;
+            color: white;
+            padding: 15px 10px;
+            text-align: center;
+        }
+
+        /* Styling for the main content area */
+        main {
+            padding: 20px;
+        }
+
+        /* Container styling */
+        .container {
+            margin: 20px auto;
+            max-width: 900px;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Styling for dropdowns, input areas, and buttons */
+        .dropdown, .input-area, .button {
+            margin: 10px 0;
+        }
+
+        /* Styling for select, input, and button elements */
+        select, input, button {
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+
+        /* Styling for result display */
+        .result {
+            margin: 20px 0;
+            background: #e9f5e9;
+            padding: 15px;
+            border-left: 5px solid #173618;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>KRISHI SHAYOG</h1>
+    </header>
+    <main>
+        <div class="container">
+            <h2>Step 1: Select a Subdistrict</h2>
+            <div class="dropdown">
+                <label for="subdistrict">Choose Subdistrict:</label>
+                <select id="subdistrict" onchange="loadCrops()">
+                    <option value="">Select</option>
+                    <option value="Arsikere">Arsikere</option>
+                    <option value="Holenarsipura">Holenarsipura</option>
+                    <option value="Belur">Belur</option>
+                    <option value="Hassan">Hassan</option>
+                    <option value="Sakleshpur">Sakleshpur</option>
+                    <option value="Channarayapatna">Channarayapatna</option>
+                    <option value="Arkalgud">Arkalgud</option>
+                </select>
+            </div>
+
+            <div id="crops-section" style="display:none;">
+                <h2>Step 2: Crops and Growth Duration</h2>
+                <ul id="crop-list"></ul>
+            </div>
+
+            <div class="input-area">
+                <h2>Step 3: Calculate Plant Spacing</h2>
+                <label for="area">Enter Area (in sq.m):</label>
+                <input type="number" id="area" placeholder="e.g., 100">
+                <button onclick="calculateSpacing()">Calculate</button>
+                <div class="result" id="spacing-result"></div>
+            </div>
+
+            <div id="crop-details-section" style="display:none;">
+                <h2>Step 4: Select Crop for Planting Guide</h2>
+                <div class="dropdown">
+                    <label for="crop">Choose Crop:</label>
+                    <select id="crop" onchange="loadPlantingGuide()">
+                        <option value="">Select</option>
+                    </select>
+                </div>
+                <div id="planting-guide" class="result"></div>
+            </div>
+
+            <div class="input-area">
+                <h2>Step 5: Calculate Profit</h2>
+                <label for="profit-area">Enter Area (in sq.m) or Number of Plants:</label>
+                <input type="number" id="profit-area" placeholder="e.g., 100">
+                <button onclick="calculateProfit()">Calculate Profit</button>
+                <div class="result" id="profit-result"></div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Crop data for different subdistricts and their growth durations
+        const cropData = {
+            Arsikere: [
+                { name: "Rice", duration: "120-150 days" },
+                { name: "Ragi", duration: "100-120 days" },
+                { name: "Groundnut", duration: "90-120 days" },
+                { name: "Pepper", duration: "2-3 years" },
+                { name: "Turmeric", duration: "7-9 months" },
+                { name: "Sunflower", duration: "80-120 days" },
+                { name: "Sesame", duration: "90-120 days" },
+            ],
+            Holenarsipura: [
+                { name: "Sugarcane", duration: "12-18 months" },
+                { name: "Coffee", duration: "2-3 years" },
+                { name: "Pepper", duration: "2-3 years" },
+            ],
+            Belur: [
+                { name: "Pepper", duration: "2-3 years" },
+                { name: "Areca Nut", duration: "6-8 years" },
+                { name: "Maize", duration: "90-120 days" },
+            ],
+            Hassan: [
+                { name: "Wheat", duration: "90-110 days" },
+                { name: "Tomato", duration: "60-90 days" },
+                { name: "Onion", duration: "100-120 days" },
+            ],
+            Sakleshpur: [
+                { name: "Coffee", duration: "2-3 years" },
+                { name: "Pepper", duration: "2-3 years" },
+                { name: "Cardamom", duration: "2-3 years" },
+            ],
+            Channarayapatna: [
+                { name: "Cotton", duration: "150-180 days" },
+                { name: "Tobacco", duration: "100-120 days" },
+                { name: "Jowar", duration: "110-130 days" },
+            ],
+            Arkalgud: [
+                { name: "Guava", duration: "6-12 months" },
+                { name: "Pepper", duration: "2-3 years" },
+                { name: "Banana", duration: "12-18 months" },
+                { name: "Papaya", duration: "9-12 months" },
+            ],
+        };
+
+        // Crop requirements data
+     
+              const cropRequirements = {
+            Rice: {
+                light: "Full sunlight",
+                water: "Requires standing water for the first 60 days",
+                soil: "Loamy soil with good organic content",
+                fertilizer: "Nitrogen-rich fertilizer every 30 days",
+                temperature: "20-35°C",
+                space: "Adequate space for growth",
+                minerals: "Rich in essential minerals",
+                soilPreparation: "Prepare soil with 5-7 cm of water for puddling",
+                plantingDepth: "5-6 cm",
+                mulching: "Mulch with straw or other organic material",
+                irrigationNeeds: "Waterlogging for the first 60 days, after that regular irrigation",
+                pestsAndDiseases: "Leafhoppers, rice blast, brown spot",
+                maintenance: "Weeding, applying fertilizers, and pest management",
+            },
+            Ragi: {
+                light: "Full sunlight",
+                water: "Low water requirement",
+                soil: "Sandy loam soil",
+                fertilizer: "Phosphorus-rich fertilizer during growth",
+                temperature: "22-27°C",
+                space: "Adequate space for growth",
+                minerals: "Rich in essential minerals",
+                soilPreparation: "Prepare the soil with deep plowing",
+                plantingDepth: "2-3 cm",
+                mulching: "Use organic mulching to maintain soil moisture",
+                irrigationNeeds: "Moderate watering, avoid waterlogging",
+                pestsAndDiseases: "Aphids, rust, and blight",
+                maintenance: "Regular watering and pest control",
+            },
+            Groundnut: {
+                light: "Full sunlight",
+                water: "Moderate water requirement",
+                soil: "Sandy loam soil",
+                fertilizer: "Balanced fertilizer with equal parts nitrogen, phosphorus, and potassium",
+                temperature: "28-30°C",
+                space: "Needs ample space for growth",
+                minerals: "Magnesium and calcium are essential",
+                soilPreparation: "Prepare soil by deep plowing and adding organic compost",
+                plantingDepth: "3-4 cm",
+                mulching: "Use organic mulching to prevent soil erosion",
+                irrigationNeeds: "Water regularly, but avoid waterlogging",
+                pestsAndDiseases: "Termites, leaf spot, aphids",
+                maintenance: "Regular weeding and pest management",
+            },
+            Pepper: {
+        light: "Full sunlight or partial shade",
+        water: "Requires consistent moisture, avoid waterlogging",
+        soil: "Well-drained, loamy soil with organic content",
+        fertilizer: "Balanced fertilizer with high phosphorus and potassium",
+        temperature: "25-30°C",
+        space: "Needs support for climbing, plant 60-90 cm apart",
+        minerals: "Rich in potassium and magnesium",
+        soilPreparation: "Prepare soil with organic compost and good drainage",
+        plantingDepth: "Plant seeds or seedlings 2-3 cm deep",
+        mulching: "Mulch to conserve moisture and reduce weeds",
+        irrigationNeeds: "Regular watering but avoid waterlogging",
+        pestsAndDiseases: "Aphids, whiteflies, root rot",
+        maintenance: "Regular watering, pruning, and pest management",
+    },
+    Turmeric: {
+        light: "Partial shade",
+        water: "Requires consistent moisture",
+        soil: "Well-drained, fertile, slightly acidic soil",
+        fertilizer: "Organic matter and balanced fertilizer",
+        temperature: "20-30°C",
+        space: "Needs adequate space for growth, plant 30 cm apart",
+        minerals: "Rich in potassium and calcium",
+        soilPreparation: "Prepare soil with compost and good drainage",
+        plantingDepth: "Plant rhizomes 5-7 cm deep",
+        mulching: "Mulch to retain soil moisture and reduce weeds",
+        irrigationNeeds: "Regular watering but avoid waterlogging",
+        pestsAndDiseases: "Root rot, fungal diseases",
+        maintenance: "Regular watering, pest control, and weeding",
+    },
+    Sunflower: {
+        light: "Full sunlight",
+        water: "Moderate water requirement",
+        soil: "Well-drained, fertile soil",
+        fertilizer: "Balanced fertilizers with more phosphorus and potassium",
+        temperature: "20-30°C",
+        space: "Plant 30-45 cm apart",
+        minerals: "Rich in phosphorus and potassium",
+        soilPreparation: "Deep plowing and addition of organic compost",
+        plantingDepth: "Plant 2-3 cm deep",
+        mulching: "Mulch to retain soil moisture",
+        irrigationNeeds: "Regular watering but avoid waterlogging",
+        pestsAndDiseases: "Sunflower beetles, rust",
+        maintenance: "Weeding, pest control, and proper irrigation",
+    },
+    Sesame: {
+        light: "Full sunlight",
+        water: "Low to moderate water requirement",
+        soil: "Sandy loam soil",
+        fertilizer: "Balanced fertilizer with emphasis on phosphorus",
+        temperature: "25-35°C",
+        space: "Plant 30 cm apart",
+        minerals: "Rich in calcium and magnesium",
+        soilPreparation: "Prepare soil with deep plowing and organic compost",
+        plantingDepth: "Plant 1-2 cm deep",
+        mulching: "Mulch to prevent weed growth",
+        irrigationNeeds: "Water regularly but avoid waterlogging",
+        pestsAndDiseases: "Aphids, whiteflies, and fungal diseases",
+        maintenance: "Weeding and pest management",
+    },
+
+            Sugarcane: {
+                light: "Full sunlight",
+                water: "Requires abundant water, particularly during the growing season",
+                soil: "Well-drained, fertile soil with high organic content",
+                fertilizer: "Nitrogen, phosphorus, and potassium, especially during early growth",
+                temperature: "20-30°C",
+                space: "Planting in rows with adequate space between plants",
+                minerals: "High in potassium and nitrogen",
+                soilPreparation: "Deep plowing and adding organic compost",
+                plantingDepth: "Plant in furrows, 5-7 cm deep",
+                mulching: "Mulch with organic matter to retain soil moisture",
+                irrigationNeeds: "Consistent irrigation to maintain soil moisture",
+                pestsAndDiseases: "Root rot, sugarcane borers",
+                maintenance: "Regular watering, pest control, and timely harvesting",
+            },
+            Coffee: {
+                light: "Partial shade",
+                water: "Requires moderate watering, prefers slightly acidic soil",
+                soil: "Well-drained, loamy soil",
+                fertilizer: "Organic matter and balanced fertilizer for optimum growth",
+                temperature: "15-25°C",
+                space: "Needs adequate spacing for growth",
+                minerals: "Rich in magnesium and potassium",
+                soilPreparation: "Prepare the soil with organic compost",
+                plantingDepth: "Plant at the same depth as the seedling",
+                mulching: "Mulch with organic material to retain moisture",
+                irrigationNeeds: "Water regularly but avoid waterlogging",
+                pestsAndDiseases: "Coffee berry borer, leaf rust",
+                maintenance: "Pruning, pest management, and regular fertilization",
+            },
+            ArecaNut: {
+                light: "Full sunlight",
+                water: "Requires consistent moisture",
+                soil: "Well-drained soil with high organic content",
+                fertilizer: "Fertilize with balanced fertilizers",
+                temperature: "25-30°C",
+                space: "Needs ample space for root development",
+                minerals: "Magnesium and potassium",
+                soilPreparation: "Deep plowing and addition of organic matter",
+                plantingDepth: "Plant 10-15 cm deep",
+                mulching: "Mulch to maintain soil moisture",
+                irrigationNeeds: "Regular watering but avoid waterlogging",
+                pestsAndDiseases: "Leaf spot, root rot, and termites",
+                maintenance: "Regular watering and pest control",
+            },
+            Maize: {
+                light: "Full sunlight",
+                water: "Moderate water requirement",
+                soil: "Loamy soil",
+                fertilizer: "Balanced fertilizer, with emphasis on phosphorus",
+                temperature: "20-30°C",
+                space: "Plant 30-45 cm apart",
+                minerals: "Rich in nitrogen and phosphorus",
+                soilPreparation: "Deep plowing and addition of organic compost",
+                plantingDepth: "Plant 2-3 cm deep",
+                mulching: "Mulch to retain soil moisture",
+                irrigationNeeds: "Regular watering during dry spells",
+                pestsAndDiseases: "Corn borers, leaf blight",
+                maintenance: "Weeding and pest control",
+            },
+            Wheat: {
+                light: "Full sunlight",
+                water: "Moderate water requirement",
+                soil: "Well-drained, fertile soil",
+                fertilizer: "Balanced fertilizer with nitrogen and phosphorus",
+                temperature: "15-25°C",
+                space: "Needs adequate spacing for growth",
+                minerals: "Rich in phosphorus and potassium",
+                soilPreparation: "Deep plowing and organic compost addition",
+                plantingDepth: "Plant 2-3 cm deep",
+                mulching: "Mulch to prevent weed growth",
+                irrigationNeeds: "Water regularly but avoid waterlogging",
+                pestsAndDiseases: "Rust, aphids, and smut",
+                maintenance: "Weeding, pest management, and regular irrigation",
+            },
+            Tomato: {
+                light: "Full sunlight",
+                water: "Moderate water requirement",
+                soil: "Well-drained, fertile soil with organic content",
+                fertilizer: "Phosphorus and potassium-rich fertilizers",
+                temperature: "18-30°C",
+                space: "Plant 30-45 cm apart",
+                minerals: "Rich in calcium and magnesium",
+                soilPreparation: "Prepare soil with compost and organic matter",
+                plantingDepth: "Plant 2-3 cm deep",
+                mulching: "Use organic mulching for moisture retention",
+                irrigationNeeds: "Regular watering but avoid waterlogging",
+                pestsAndDiseases: "Blight, aphids, and whiteflies",
+                maintenance: "Prune, water regularly, and pest control",
+            },
+            Onion: {
+                light: "Full sunlight",
+                water: "Moderate water requirement",
+                soil: "Well-drained soil, rich in organic matter",
+                fertilizer: "Balanced fertilizers with high phosphorus content",
+                temperature: "15-25°C",
+                space: "Plant 10-15 cm apart",
+                minerals: "Rich in calcium and potassium",
+                soilPreparation: "Deep plowing and organic compost addition",
+                plantingDepth: "Plant 2-3 cm deep",
+                mulching: "Use mulch to retain soil moisture",
+                irrigationNeeds: "Regular watering but avoid waterlogging",
+                pestsAndDiseases: "Onion thrips, downy mildew",
+                maintenance: "Weeding and pest management",
+            },
+            Cardamom: {
+                light: "Partial shade",
+                water: "Requires consistent moisture and high humidity",
+                soil: "Well-drained, fertile, slightly acidic soil",
+                fertilizer: "Organic matter and balanced fertilizer",
+                temperature: "20-30°C",
+                space: "Plant 1 meter apart",
+                minerals: "Rich in potassium and phosphorus",
+                soilPreparation: "Prepare soil with organic compost",
+                plantingDepth: "Plant rhizomes 3-5 cm deep",
+                mulching: "Mulch with organic matter",
+                irrigationNeeds: "Water regularly but avoid waterlogging",
+                pestsAndDiseases: "Root rot, scale insects",
+                maintenance: "Regular watering, pest control, and pruning",
+            },
+            Cotton: {
+                light: "Full sunlight",
+                water: "Requires moderate watering",
+                soil: "Well-drained soil",
+                fertilizer: "Nitrogen and potassium fertilizers",
+                temperature: "25-30°C",
+                space: "Needs adequate space between plants",
+                minerals: "Magnesium and nitrogen",
+                soilPreparation: "Deep plowing and organic compost addition",
+                plantingDepth: "Plant 2-3 cm deep",
+                mulching: "Mulch to maintain moisture",
+                irrigationNeeds: "Regular watering, especially during dry spells",
+                pestsAndDiseases: "Cotton bollworm, aphids",
+                maintenance: "Regular weeding, pest management, and irrigation",
+            },
+            Tobacco: {
+                light: "Full sunlight",
+                water: "Moderate water requirement",
+                soil: "Well-drained, fertile soil",
+                fertilizer: "Balanced fertilizers, especially nitrogen",
+                temperature: "25-30°C",
+                space: "Plant 30-45 cm apart",
+                minerals: "Magnesium and nitrogen",
+                soilPreparation: "Deep plowing and compost addition",
+                plantingDepth: "Plant 1-2 cm deep",
+                mulching: "Mulch to retain moisture",
+                irrigationNeeds: "Water regularly but avoid waterlogging",
+                pestsAndDiseases: "Tobacco hornworm, aphids",
+                maintenance: "Regular weeding and pest control",
+            },
+            Jowar: {
+                light: "Full sunlight",
+                water: "Low water requirement",
+                soil: "Sandy loam soil",
+                fertilizer: "Balanced fertilizers with more phosphorus",
+                temperature: "25-30°C",
+                space: "Plant 20-30 cm apart",
+                minerals: "Magnesium and calcium",
+                soilPreparation: "Deep plowing with organic compost",
+                plantingDepth: "Plant 2-3 cm deep",
+                mulching: "Mulch to reduce weed growth",
+                irrigationNeeds: "Water regularly but avoid waterlogging",
+                pestsAndDiseases: "Termites, aphids, and blight",
+                maintenance: "Weeding and pest management",
+            },
+            Guava: {
+                light: "Full sunlight",
+                water: "Moderate water requirement",
+                soil: "Well-drained soil with organic matter",
+                fertilizer: "Balanced fertilizers with phosphorus and potassium",
+                temperature: "25-30°C",
+                space: "Plant 5 meters apart",
+                minerals: "Magnesium and calcium",
+                soilPreparation: "Deep plowing and organic compost addition",
+                plantingDepth: "Plant 4-5 cm deep",
+                mulching: "Mulch to retain soil moisture",
+                irrigationNeeds: "Regular watering but avoid waterlogging",
+                pestsAndDiseases: "Fruit flies, leaf spot",
+                maintenance: "Prune and water regularly",
+            },
+            Banana: {
+                light: "Full sunlight",
+                water: "Moderate water requirement",
+                soil: "Well-drained, fertile soil with organic content",
+                fertilizer: "High potassium and phosphorus fertilizers",
+                temperature: "26-30°C",
+                space: "Plant 2-3 meters apart",
+                minerals: "Magnesium, potassium, and calcium",
+                soilPreparation: "Deep plowing and addition of organic compost",
+                plantingDepth: "Plant 10-15 cm deep",
+                mulching: "Mulch to retain soil moisture",
+                irrigationNeeds: "Regular watering, but avoid waterlogging",
+                pestsAndDiseases: "Banana weevil, leaf spot",
+                maintenance: "Regular watering, pest management, and pruning",
+            },
+            Papaya: {
+                light: "Full sunlight",
+                water: "Moderate water requirement",
+                soil: "Well-drained soil with high organic content",
+                fertilizer: "Balanced fertilizer with more nitrogen",
+                temperature: "25-30°C",
+                space: "Plant 2 meters apart",
+                minerals: "Rich in calcium and phosphorus",
+                soilPreparation: "Prepare soil with compost and organic matter",
+                plantingDepth: "Plant 3-4 cm deep",
+                mulching: "Mulch to prevent weed growth",
+                irrigationNeeds: "Regular watering but avoid waterlogging",
+                pestsAndDiseases: "Papaya ringspot virus, aphids",
+                maintenance: "Prune, water regularly, and pest management",
+            
+            },
+        };
+
+        // Profit data for different crops
+        const cropProfitData = {
+    Rice: { profitPerSqM: 5, profitPerPlant: 10 },
+    Ragi: { profitPerSqM: 4, profitPerPlant: 8 },
+    Coffee: { profitPerSqM: 15, profitPerPlant: 30 },
+    Pepper: { profitPerSqM: 20, profitPerPlant: 40 },
+    Groundnut: { profitPerSqM: 6, profitPerPlant: 12 },
+    Sugarcane: { profitPerSqM: 10, profitPerPlant: 20 },
+    ArecaNut: { profitPerSqM: 25, profitPerPlant: 50 },
+    Maize: { profitPerSqM: 7, profitPerPlant: 14 },
+    Wheat: { profitPerSqM: 5, profitPerPlant: 10 },
+    Tomato: { profitPerSqM: 8, profitPerPlant: 16 },
+    Onion: { profitPerSqM: 6, profitPerPlant: 12 },
+    Cardamom: { profitPerSqM: 30, profitPerPlant: 60 },
+    Cotton: { profitPerSqM: 9, profitPerPlant: 18 },
+    Tobacco: { profitPerSqM: 7, profitPerPlant: 14 },
+    Jowar: { profitPerSqM: 5, profitPerPlant: 10 },
+    Guava: { profitPerSqM: 12, profitPerPlant: 24 },
+    Banana: { profitPerSqM: 20, profitPerPlant: 40 },
+    Papaya: { profitPerSqM: 15, profitPerPlant: 30 },
+    Turmeric: { profitPerSqM: 18, profitPerPlant: 36 },
+    Sunflower: { profitPerSqM: 9, profitPerPlant: 18 },
+    Sesame: { profitPerSqM: 7, profitPerPlant: 14 }
+};
+
+        // Function to load crops based on selected subdistrict
+        function loadCrops() {
+            const subdistrict = document.getElementById("subdistrict").value;
+            const cropList = document.getElementById("crop-list");
+            const cropsSection = document.getElementById("crops-section");
+            const cropDropdown = document.getElementById("crop");
+
+            if (!subdistrict) {
+                cropsSection.style.display = "none";
+                return;
+            }
+
+            const crops = cropData[subdistrict];
+            cropList.innerHTML = crops.map(
+                (crop) => `<li>${crop.name} - Growth Duration: ${crop.duration}</li>`
+            ).join("");
+            cropDropdown.innerHTML = `<option value="">Select</option>` + 
+                crops.map((crop) => `<option value="${crop.name}">${crop.name}</option>`).join("");
+            cropsSection.style.display = "block";
+            document.getElementById("crop-details-section").style.display = "block";
+        }
+
+        // Function to calculate plant spacing based on area
+        function calculateSpacing() {
+            const area = document.getElementById("area").value;
+            if (!area) {
+                alert("Please enter a valid area.");
+                return;
+            }
+            const plants = Math.floor(area / 2); // Example spacing
+            document.getElementById("spacing-result").innerText =
+                `With a spacing of 2 sq.m per plant, you can grow ${plants} plants in ${area} sq.m area.`;
+        }
+
+        // Function to load planting guide based on selected crop
+        function loadPlantingGuide() {
+            const crop = document.getElementById("crop").value;
+            const guide = document.getElementById("planting-guide");
+            if (!crop) {
+                guide.innerHTML = "";
+                return;
+            }
+
+            const requirements = cropRequirements[crop];
+            if (requirements) {
+                guide.innerHTML = `
+                    <h3>Planting Guide for ${crop}</h3>
+                    <p><strong>Light Requirement:</strong> ${requirements.light}</p>
+                    <p><strong>Water Requirement:</strong> ${requirements.water}</p>
+                    <p><strong>Soil Requirement:</strong> ${requirements.soil}</p>
+                    <p><strong>Fertilizer:</strong> ${requirements.fertilizer}</p>
+                    <p><strong>Temperature:</strong> ${requirements.temperature}</p>
+                    <p><strong>Space Requirement:</strong> ${requirements.space}</p>
+                    <p><strong>Mineral Requirement:</strong> ${requirements.minerals}</p>
+                    <p><strong>Soil Preparation:</strong> ${requirements.soilPreparation}</p>
+                    <p><strong>Planting Depth:</strong> ${requirements.plantingDepth}</p>
+                    <p><strong>Mulching:</strong> ${requirements.mulching}</p>
+                    <p><strong>Irrigation Needs:</strong> ${requirements.irrigationNeeds}</p>
+                    <p><strong>Common Pests/Diseases:</strong> ${requirements.pestsAndDiseases}</p>
+                    <p><strong>Maintenance:</strong> ${requirements.maintenance}</p>
+                    `;
+
+            } else {
+                guide.innerHTML = `<p>Information on ${crop} is not available.</p>`;
+            }
+        }
+
+        // Function to calculate profit based on area or number of plants
+        function calculateProfit() {
+            const areaOrPlants = document.getElementById("profit-area").value;
+            const crop = document.getElementById("crop").value;
+            const profitResult = document.getElementById("profit-result");
+
+            if (!areaOrPlants || !crop) {
+                alert("Please enter a valid area or number of plants and select a crop.");
+                return;
+            }
+
+            const profitData = cropProfitData[crop];
+            if (profitData) {
+                const profitPerSqM = profitData.profitPerSqM;
+                const profitPerPlant = profitData.profitPerPlant;
+
+                // Assuming the input is area, calculate profit based on area
+                const totalProfit = areaOrPlants * profitPerSqM; // Calculate profit based on area
+                profitResult.innerText = `Estimated profit for ${areaOrPlants} sq.m of ${crop} is ₹${totalProfit}.`;
+            } else {
+                profitResult.innerText = `Profit data for ${crop} is not available.`;
+            }
+        }
+    </script>
+</body>
+</html>
